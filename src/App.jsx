@@ -53,7 +53,11 @@ function AppContent() {
   useEffect(() => {
     // Inicializar datos al cargar la app
     initializeCanchas()
-    createAdminUser()
+    
+    // 🔒 SEGURIDAD: Solo inicializar admin en desarrollo
+    if (import.meta.env.MODE === 'development') {
+      createAdminUser()
+    }
   }, [])
 
   return (

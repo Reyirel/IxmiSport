@@ -1,0 +1,137 @@
+/* Home styles are now handled by Tailwind CSS and inline animations */
+/* This file is kept for reference only */
+
+
+.btn-cta-primary:hover {
+  background-color: rgba(255, 255, 255, 0.95);
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.25);
+  transform: translateY(-3px);
+}
+
+.btn-cta-secondary {
+  background: transparent;
+  color: var(--color-primary);
+  padding: 14px 40px;
+  border: 2px solid var(--color-primary);
+  border-radius: 10px;
+  font-weight: 700;
+  font-size: 1.05rem;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  text-decoration: none;
+  transition: all 0.3s cubic-bezier(0.23, 1, 0.320, 1);
+}
+
+.btn-cta-secondary:hover {
+  background-color: transparent;
+  color: var(--color-primary);
+  border-width: 2px;
+}
+
+/* ====== RESPONSIVE ====== */
+@media (max-width: 768px) {
+  .hero-content {
+    grid-template-columns: 1fr;
+    gap: 2rem;
+    padding-bottom: 2rem;
+  }
+
+  .hero-illustration {
+    order: -1;
+  }
+
+  .hero-title {
+    font-size: 2.2rem;
+  }
+
+  .hero-subtitle {
+    font-size: 1.05rem;
+  }
+
+  .illustration-box {
+    width: 250px;
+    height: 250px;
+  }
+
+  .ball-animation {
+    font-size: 5rem;
+  }
+
+  .section-header h2 {
+    font-size: 2rem;
+  }
+
+  .stats-title {
+    font-size: 2rem;
+  }
+
+  .stat-number {
+    font-size: 2.2rem;
+  }
+
+  .cta-content h2 {
+    font-size: 2rem;
+  }
+
+  .features-grid {
+    grid-template-columns: 1fr;
+    gap: 1.5rem;
+  }
+
+  .stats-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .steps-container {
+    gap: 2rem;
+  }
+
+  .step-arrow {
+    right: auto;
+    bottom: -3rem;
+    top: auto;
+    transform: translateX(0);
+    font-size: 1.5rem;
+    rotate: 90deg;
+  }
+
+  .step:last-child .step-arrow {
+    display: none;
+  }
+}
+
+@media (max-width: 480px) {
+  .hero {
+    padding: 3rem 1rem;
+  }
+
+  .hero-title {
+    font-size: 1.8rem;
+  }
+
+  .hero-cta {
+    flex-direction: column;
+  }
+
+  .btn-hero-primary,
+  .btn-hero-secondary {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .stats-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .cta-buttons {
+    flex-direction: column;
+  }
+
+  .btn-cta-primary,
+  .btn-cta-secondary {
+    width: 100%;
+    justify-content: center;
+  }
+}
