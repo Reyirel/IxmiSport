@@ -131,35 +131,70 @@ export const checkNoShow = async (reservaId) => {
 
 // ============ CANCHAS ============
 
-// Crear canchas iniciales
-export const initializeCanchas = async () => {
-  try {
-    const canchasData = [
-      // Basquet (mínimo 4 jugadores)
-      { nombre: 'Cancha 1 - Basquet', deporte: 'Basquet', precio: 0, personasMinimas: 4, inhabilitada: false },
-      { nombre: 'Cancha 2 - Basquet', deporte: 'Basquet', precio: 0, personasMinimas: 4, inhabilitada: false },
-      { nombre: 'Cancha 3 - Basquet', deporte: 'Basquet', precio: 0, personasMinimas: 4, inhabilitada: false },
-      { nombre: 'Cancha 4 - Basquet', deporte: 'Basquet', precio: 0, personasMinimas: 4, inhabilitada: false },
-      // Voley (mínimo 6 jugadores)
-      { nombre: 'Cancha 1 - Voley', deporte: 'Voley', precio: 0, personasMinimas: 6, inhabilitada: false },
-      { nombre: 'Cancha 2 - Voley', deporte: 'Voley', precio: 0, personasMinimas: 6, inhabilitada: false },
-      // Padel (mínimo 2 jugadores)
-      { nombre: 'Cancha 1 - Padel', deporte: 'Padel', precio: 0, personasMinimas: 2, inhabilitada: false },
-      // Tenis (mínimo 2 jugadores)
-      { nombre: 'Cancha 1 - Tenis', deporte: 'Tenis', precio: 0, personasMinimas: 2, inhabilitada: false },
-      { nombre: 'Cancha 2 - Tenis', deporte: 'Tenis', precio: 0, personasMinimas: 2, inhabilitada: false },
-    ]
+// Configuración de canchas del sistema (9 canchas en total)
+const CANCHAS_CONFIG = [
+  // Basquetbol (4 canchas - mínimo 4 jugadores)
+  { nombre: 'Cancha 1 - Basquetbol', deporte: 'Basquetbol', precio: 0, personasMinimas: 4, inhabilitada: false, orden: 1 },
+  { nombre: 'Cancha 2 - Basquetbol', deporte: 'Basquetbol', precio: 0, personasMinimas: 4, inhabilitada: false, orden: 2 },
+  { nombre: 'Cancha 3 - Basquetbol', deporte: 'Basquetbol', precio: 0, personasMinimas: 4, inhabilitada: false, orden: 3 },
+  { nombre: 'Cancha 4 - Basquetbol', deporte: 'Basquetbol', precio: 0, personasMinimas: 4, inhabilitada: false, orden: 4 },
+  // Voleibol (2 canchas - mínimo 6 jugadores)
+  { nombre: 'Cancha 1 - Voleibol', deporte: 'Voleibol', precio: 0, personasMinimas: 6, inhabilitada: false, orden: 5 },
+  { nombre: 'Cancha 2 - Voleibol', deporte: 'Voleibol', precio: 0, personasMinimas: 6, inhabilitada: false, orden: 6 },
+  // Pádel (1 cancha - mínimo 2 jugadores)
+  { nombre: 'Cancha 1 - Pádel', deporte: 'Pádel', precio: 0, personasMinimas: 2, inhabilitada: false, orden: 7 },
+  // Fútbol (2 canchas - mínimo 10 jugadores)
+  { nombre: 'Cancha 1 - Fútbol', deporte: 'Fútbol', precio: 0, personasMinimas: 10, inhabilitada: false, orden: 8 },
+  { nombre: 'Cancha 2 - Fútbol', deporte: 'Fútbol', precio: 0, personasMinimas: 10, inhabilitada: false, orden: 9 },
+]
 
-    // Verificar si ya existen
+// Flag para evitar inicialización múltiple
+let canchasInitialized = false
+let canchasInitializing = false
+
+// Crear canchas iniciales (solo una vez)
+export const initializeCanchas = async () => {
+  // Evitar ejecución múltiple
+  if (canchasInitialized || canchasInitializing) {
+    return
+  }
+  
+  canchasInitializing = true
+  
+  try {
+    // Verificar canchas existentes
     const existingCanchas = await getAllCanchas()
-    if (existingCanchas.length === 0) {
-      for (const cancha of canchasData) {
-        await addCancha(cancha)
-      }
-      console.log('Canchas inicializadas')
+    
+    // Verificar si ya están las 9 canchas correctas por nombre
+    const nombresExistentes = existingCanchas.map(c => c.nombre)
+    const nombresEsperados = CANCHAS_CONFIG.map(c => c.nombre)
+    const todasExisten = nombresEsperados.every(nombre => nombresExistentes.includes(nombre))
+    
+    if (todasExisten && existingCanchas.length === CANCHAS_CONFIG.length) {
+      console.log('✅ Canchas ya configuradas correctamente (9 canchas)')
+      canchasInitialized = true
+      canchasInitializing = false
+      return
     }
+    
+    console.log(`Reinicializando canchas: encontradas ${existingCanchas.length}, esperadas ${CANCHAS_CONFIG.length}`)
+    
+    // Eliminar TODAS las canchas existentes
+    for (const cancha of existingCanchas) {
+      await deleteCancha(cancha.id)
+    }
+    
+    // Crear las 9 canchas correctas
+    for (const cancha of CANCHAS_CONFIG) {
+      await addCancha(cancha)
+    }
+    
+    console.log('✅ 9 Canchas inicializadas: 4 Basquetbol, 2 Voleibol, 1 Pádel, 2 Fútbol')
+    canchasInitialized = true
   } catch (error) {
-    throw error
+    console.error('Error inicializando canchas:', error)
+  } finally {
+    canchasInitializing = false
   }
 }
 
@@ -215,19 +250,49 @@ export const updateCancha = async (chanchaId, chanchaData) => {
   }
 }
 
-// Inhabilitar cancha total o por tiempo
-export const disableCancha = async (chanchaId, tiempoMinutos = null) => {
+// Eliminar una cancha
+export const deleteCancha = async (chanchaId) => {
   try {
     const docRef = doc(db, 'canchas', chanchaId)
+    await deleteDoc(docRef)
+  } catch (error) {
+    throw error
+  }
+}
+
+// Inhabilitar cancha total o por tiempo
+// horaInicio: hora en formato "HH:MM" para programar el inicio de la inhabilitación
+// tiempoMinutos: duración en minutos desde horaInicio (o desde ahora si no hay horaInicio)
+export const disableCancha = async (chanchaId, tiempoMinutos = null, horaInicio = null) => {
+  try {
+    const docRef = doc(db, 'canchas', chanchaId)
+    const now = new Date()
+    
+    let startTime = now
+    
+    // Si se especifica una hora de inicio
+    if (horaInicio) {
+      const [hours, minutes] = horaInicio.split(':').map(Number)
+      startTime = new Date(now.getFullYear(), now.getMonth(), now.getDate(), hours, minutes, 0)
+      
+      // Si la hora de inicio ya pasó hoy, no permitir
+      if (startTime < now) {
+        // Ajustar para que sea la hora actual si ya pasó
+        startTime = now
+      }
+    }
+    
     const updateData = {
       inhabilitada: true,
-      inhabilitadaEn: Timestamp.now(),
+      inhabilitadaEn: Timestamp.fromDate(startTime),
     }
+    
     if (tiempoMinutos) {
-      updateData.inhabilitadaHasta = Timestamp.fromDate(
-        new Date(Date.now() + tiempoMinutos * 60000)
-      )
+      // La inhabilitación termina X minutos después de la hora de inicio
+      const endTime = new Date(startTime.getTime() + tiempoMinutos * 60000)
+      updateData.inhabilitadaHasta = Timestamp.fromDate(endTime)
     }
+    
     await updateDoc(docRef, updateData)
   } catch (error) {
     throw error
@@ -417,6 +482,122 @@ export const autoCancelPendingReservas = async () => {
     }
   } catch (error) {
     console.error('Error al cancelar reservas automáticamente:', error)
+  }
+}
+
+// ============ FUNCIONES ADMIN ============
+
+// Obtener todos los usuarios
+export const getAllUsers = async () => {
+  try {
+    const querySnapshot = await getDocs(collection(db, 'usuarios'))
+    const usuarios = []
+    querySnapshot.forEach((doc) => {
+      usuarios.push({ id: doc.id, ...doc.data() })
+    })
+    return usuarios.sort((a, b) => {
+      // Ordenar por fecha de creación (más recientes primero)
+      if (a.createdAt && b.createdAt) {
+        return b.createdAt.toDate() - a.createdAt.toDate()
+      }
+      return 0
+    })
+  } catch (error) {
+    throw error
+  }
+}
+
+// Obtener reservas de un usuario específico (para admin)
+export const getUserReservasAdmin = async (userId) => {
+  try {
+    const reservas = await getUserReservas(userId)
+    return reservas.sort((a, b) => {
+      if (a.fecha && b.fecha) {
+        return new Date(b.fecha) - new Date(a.fecha)
+      }
+      return 0
+    })
+  } catch (error) {
+    throw error
+  }
+}
+
+// Obtener estadísticas generales del sistema
+export const getSystemStats = async () => {
+  try {
+    const [reservas, usuarios, canchas] = await Promise.all([
+      getAllReservas(),
+      getAllUsers(),
+      getAllCanchas()
+    ])
+    
+    const now = new Date()
+    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate())
+    const thisMonth = new Date(now.getFullYear(), now.getMonth(), 1)
+    
+    // Reservas de hoy
+    const reservasHoy = reservas.filter(r => {
+      if (!r.fecha) return false
+      const reservaDate = new Date(r.fecha)
+      return reservaDate.toDateString() === today.toDateString()
+    })
+    
+    // Reservas del mes
+    const reservasMes = reservas.filter(r => {
+      if (!r.fecha) return false
+      const reservaDate = new Date(r.fecha)
+      return reservaDate >= thisMonth
+    })
+    
+    // Usuarios activos (con al menos una reserva)
+    const usuariosActivos = usuarios.filter(u => (u.totalReservas || 0) > 0)
+    
+    // Estadísticas por deporte
+    const deportes = {}
+    reservas.forEach(r => {
+      const deporte = r.deporte || 'Sin especificar'
+      if (!deportes[deporte]) {
+        deportes[deporte] = { total: 0, aprobadas: 0, pendientes: 0, rechazadas: 0 }
+      }
+      deportes[deporte].total++
+      if (r.estado === 'aprobada') deportes[deporte].aprobadas++
+      else if (r.estado === 'pendiente') deportes[deporte].pendientes++
+      else if (r.estado === 'rechazada') deportes[deporte].rechazadas++
+    })
+    
+    // Rating promedio de usuarios
+    const ratingPromedio = usuarios.length > 0 
+      ? usuarios.reduce((acc, u) => acc + (u.estrellas || 5), 0) / usuarios.length 
+      : 5
+    
+    return {
+      totalReservas: reservas.length,
+      reservasHoy: reservasHoy.length,
+      reservasMes: reservasMes.length,
+      pendientes: reservas.filter(r => r.estado === 'pendiente').length,
+      aprobadas: reservas.filter(r => r.estado === 'aprobada').length,
+      rechazadas: reservas.filter(r => r.estado === 'rechazada').length,
+      canceladas: reservas.filter(r => r.estado === 'cancelada').length,
+      noAsistencias: reservas.filter(r => r.estado === 'no-asistió').length,
+      totalUsuarios: usuarios.length,
+      usuariosActivos: usuariosActivos.length,
+      ratingPromedio: ratingPromedio.toFixed(1),
+      totalCanchas: canchas.length,
+      canchasActivas: canchas.filter(c => !c.inhabilitada).length,
+      canchasInhabilitadas: canchas.filter(c => c.inhabilitada).length,
+      estadisticasPorDeporte: deportes
+    }
+  } catch (error) {
+    throw error
+  }
+}
+
+// Actualizar rating de usuario (admin)
+export const updateUserRating = async (userId, newRating) => {
+  try {
+    await updateUserData(userId, { estrellas: Math.min(5, Math.max(1, newRating)) })
+  } catch (error) {
+    throw error
   }
 }
 
